@@ -16,6 +16,7 @@ import base64
 import re
 import backoff
 import re
+from urllib.parse import urlparse, parse_qs, unquote
 # Load environment variables
 load_dotenv()
 
@@ -128,26 +129,22 @@ headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
     }
 
-def get_final_url(url):
+def get_final_url(input_url):
     try:
-        logging.info(f"Resolving final URL for {url}")
-        response = requests.get(url, headers=headers,allow_redirects=True)
-        # 解析返回的HTML
-        soup = BeautifulSoup(response.content, 'html.parser')
+        # 提取并解码url参数
+        parsed_url = urlparse(input_url)
+        query_params = parse_qs(parsed_url.query)
+        encoded_url = query_params.get('url', [None])[0]
+        
+        if not encoded_url:
+            logging.error(f"No 'url' parameter found in {input_url}")
+            return None
 
-        # 尝试找到 <script> 标签并解析其中的 location.replace 链接
-        script_tag = soup.find('script', text=re.compile(r'location\.replace'))
-        if script_tag:
-            match = re.search(r'location\.replace\([\'"](.+?)[\'"]\)', script_tag.string)
-            if match:
-                final_url = match.group(1)
-
-                return final_url
-
-        # 如果没有 <script> 标签的情况，直接返回重定向后的URL
-        return response.url
+        final_url = unquote(encoded_url)
+        logging.info(f"Decoded URL: {final_url}")
+        return final_url
     except requests.RequestException as e:
-        logging.error(f"Error resolving final URL for {url}: {e}")
+        logging.error(f"Error resolving final URL for {input_url}: {e}")
         return None
 
 def extract_urls(content):
@@ -166,7 +163,7 @@ def extract_urls(content):
 
 
 def firecrawl_submit_crawl(url):
-    logging(f"Submitting crawl job for URL: {url}")
+    logging.info(f"Submitting crawl job for URL: {url}")
     try:
         response = requests.post(
             f'{FIRECRAWL_API_URL}/crawl',
@@ -209,7 +206,7 @@ def firecrawl_check_crawl(job_id):
     return None
 
 def firecrawl_crawl(url):
-    logging(f"Processing URL: {url}")
+    logging.info(f"Processing URL: {url}")
     job_id = firecrawl_submit_crawl(url)
     if not job_id:
         return None
@@ -222,7 +219,7 @@ def firecrawl_crawl(url):
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(30)  # Wait for 5 seconds before checking again
+        time.sleep(10)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
