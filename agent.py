@@ -30,7 +30,7 @@ PASSWORD = os.getenv('QQ_PASSWORD')
 
 # Firecrawl API settings
 FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
-FIRECRAWL_API_URL = 'https://api.firecrawl.dev/v1'
+FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
@@ -169,7 +169,6 @@ def firecrawl_submit_crawl(url):
             f'{FIRECRAWL_API_URL}/crawl',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bearer {FIRECRAWL_API_KEY}'
             },
             json={
                 'url': url,
@@ -196,7 +195,6 @@ def firecrawl_check_crawl(job_id):
             f'{FIRECRAWL_API_URL}/crawl/{job_id}',
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': f'Bearer {FIRECRAWL_API_KEY}'
             }
         )
         response.raise_for_status()
@@ -237,19 +235,39 @@ def ollama_request(prompt):
         logging.error(f"Error in Ollama request: {e}")
         return None
 
-def translate_text(text):
-    return ollama_request(f"请将以下论文内容提取标题，摘要并翻译成中文：\n\n{text}") or "翻译失败"
+def translate_text_with_title(content):
+    prompt = (
+        f"请将以下论文内容提取标题、摘要并翻译成中文。"
+        f"返回时包括以下信息：\n"
+        f"1. 原始标题\n"
+        f"2. 原始摘要内容\n"
+        f"3. 翻译后的标题\n"
+        f"4. 翻译后的摘要\n\n"
+        f"{content}"
+    )
+    return ollama_request(prompt) or "翻译失败"
 
-def summarize_paper(content):
-    return ollama_request(f"请分析以下论文内容，按背景，解决问题，提出方法，创新点来总结：\n\n{content}") or "摘要总结失败"
+def summarize_paper_with_title(content):
+    prompt = (
+        f"请分析以下论文内容，并按以下要求总结：\n"
+        f"1. 背景\n"
+        f"2. 解决的问题\n"
+        f"3. 提出的方法\n"
+        f"4. 创新点\n"
+        f"返回时包括翻译后的标题和总结内容：\n\n"
+        f"{content}"
+    )
+    return ollama_request(prompt) or "摘要总结失败"
 
 def process_paper(url):
     markdown_content = firecrawl_crawl(url)
+    logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content:
-        translated_content = translate_text(markdown_content)
-        summary = summarize_paper(translated_content)
+        translated_content = translate_text_with_title(markdown_content)
+        summary = summarize_paper_with_title(translated_content)
         return {
             'url': url,
+            'original_content': markdown_content,
             'translated_content': translated_content,
             'summary': summary
         }
@@ -274,6 +292,7 @@ def main():
         for result in results:
             if result:
                 f.write(f"# URL: {result['url']}\n\n")
+                f.write(f"## 原始内容\n{result['original_content']}\n\n")
                 f.write(f"## 译文内容\n{result['translated_content']}\n\n")
                 f.write(f"## 论文总结\n{result['summary']}\n\n")
                 f.write("---\n\n")
