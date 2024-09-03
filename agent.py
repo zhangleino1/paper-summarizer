@@ -213,7 +213,7 @@ def firecrawl_crawl(url):
     for _ in range(max_attempts):
         result = firecrawl_check_crawl(job_id)
         if result and result['status'] == 'completed':
-            return result['data'][0]['markdown']  # Assuming we want the first page's markdown
+            return {"markdown":result['data'][0]['markdown'] ,"metadata":result['data'][0]['metadata']} # Assuming we want the first page's markdown
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
