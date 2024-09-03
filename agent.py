@@ -217,7 +217,7 @@ def firecrawl_crawl(url):
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(10)  # Wait for 5 seconds before checking again
+        time.sleep(5)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -235,27 +235,28 @@ def ollama_request(prompt):
         logging.error(f"Error in Ollama request: {e}")
         return None
 
-def translate_text_with_title(content):
+def clean_content(content):
     prompt = (
-        f"请将以下论文内容提取标题、摘要并翻译成中文。"
-        f"返回时包括以下信息：\n"
-        f"1. 原始标题\n"
-        f"2. 原始摘要内容\n"
-        f"3. 翻译后的标题\n"
-        f"4. 翻译后的摘要\n\n"
+        f"请清理以下论文内容，去除多余的代码、标签和非必要元素，仅保留论文的原文内容，不要输出无关内容：\n\n"
         f"{content}"
+    )
+    return ollama_request(prompt) or "清理失败"
+
+def translate_text(cleaned_content):
+    prompt = (
+        f"请将以下论文内容翻译成中文，包括标题和摘要，不要输出无关内容：\n\n"
+        f"{cleaned_content}"
     )
     return ollama_request(prompt) or "翻译失败"
 
-def summarize_paper_with_title(content):
+def summarize_paper(translated_content):
     prompt = (
-        f"请分析以下论文内容，并按以下要求总结：\n"
+        f"请分析以下翻译后的论文内容，并按以下要求总结，不要输出无关内容：\n"
         f"1. 背景\n"
         f"2. 解决的问题\n"
         f"3. 提出的方法\n"
-        f"4. 创新点\n"
-        f"返回时包括翻译后的标题和总结内容：\n\n"
-        f"{content}"
+        f"4. 创新点\n\n"
+        f"{translated_content}"
     )
     return ollama_request(prompt) or "摘要总结失败"
 
@@ -263,11 +264,12 @@ def process_paper(url):
     markdown_content = firecrawl_crawl(url)
     logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content:
-        translated_content = translate_text_with_title(markdown_content)
-        summary = summarize_paper_with_title(translated_content)
+        cleaned_content = clean_content(markdown_content)
+        translated_content = translate_text(cleaned_content)
+        summary = summarize_paper(translated_content)
         return {
             'url': url,
-            'original_content': markdown_content,
+            'cleaned_content': cleaned_content,
             'translated_content': translated_content,
             'summary': summary
         }
@@ -287,14 +289,17 @@ def main():
                 all_paper_urls.extend(extract_urls(content))
 
         results = list(executor.map(process_paper, all_paper_urls))
-
-    with open('research_summary.md', 'w', encoding='utf-8') as f:
+    # 取年月日 时分秒作为文件名
+    now = datetime.now()
+    now_str = now.strftime("%Y%m%d%H%M%S")
+    with open(now_str+'.md', 'w', encoding='utf-8') as f:
         for result in results:
             if result:
                 f.write(f"# URL: {result['url']}\n\n")
-                f.write(f"## 原始内容\n{result['original_content']}\n\n")
-                f.write(f"## 译文内容\n{result['translated_content']}\n\n")
-                f.write(f"## 论文总结\n{result['summary']}\n\n")
+                f.write(f"## 原文\n{result['cleaned_content']}\n\n")
+                f.write(f"## 翻译\n{result['translated_content']}\n\n")
+                f.write(f"## 总结\n{result['summary']}\n\n")
+                f.write(f"## 链接: {result['url']}\n\n")
                 f.write("---\n\n")
 
 if __name__ == "__main__":
