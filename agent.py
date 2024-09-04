@@ -237,10 +237,26 @@ def ollama_request(prompt):
 
 def clean_content(content):
     prompt = (
-        f"请清理以下论文内容，去除多余的代码、标签和非必要元素，仅保留论文的原文内容，不要输出无关内容：\n\n"
+        f"请清理以下论文内容，去除多余的代码、标签和非必要元素，并提取论文的标题和正文内容。请返回如下格式：\n"
+        f"标题: <论文标题>\n\n"
+        f"正文: <论文正文>\n\n"
+        f"仅保留上述格式，去除无关内容：\n\n"
         f"{content}"
     )
-    return ollama_request(prompt) or "清理失败"
+    response = ollama_request(prompt) or "清理失败"
+    
+    # 简单处理返回的内容，将其分为标题和正文
+    if response != "清理失败":
+        title_start = response.find("标题:")
+        content_start = response.find("正文:")
+        if title_start != -1 and content_start != -1:
+            title = response[title_start + len("标题:"):content_start].strip()
+            body = response[content_start + len("正文:"):].strip()
+            return title, body
+        else:
+            return "标题提取失败", response
+    return "清理失败", "正文提取失败"
+
 
 def translate_text(cleaned_content):
     prompt = (
@@ -264,16 +280,18 @@ def process_paper(url):
     markdown_content = firecrawl_crawl(url)
     logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content:
-        cleaned_content = clean_content(markdown_content)
+        title, cleaned_content = clean_content(markdown_content)
         translated_content = translate_text(cleaned_content)
         summary = summarize_paper(translated_content)
         return {
             'url': url,
+            'title': title,
             'cleaned_content': cleaned_content,
             'translated_content': translated_content,
             'summary': summary
         }
     return None
+
 
 def main():
     mail, email_ids = get_emails()
@@ -295,7 +313,7 @@ def main():
     with open(now_str+'.md', 'w', encoding='utf-8') as f:
         for result in results:
             if result:
-                f.write(f"# URL: {result['url']}\n\n")
+                f.write(f"# 标题\n{result['title']}\n\n")
                 f.write(f"## 原文\n{result['cleaned_content']}\n\n")
                 f.write(f"## 翻译\n{result['translated_content']}\n\n")
                 f.write(f"## 总结\n{result['summary']}\n\n")
