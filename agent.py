@@ -237,10 +237,12 @@ def ollama_request(prompt):
 
 def clean_content(content):
     prompt = (
-        f"请清理以下论文内容，去除多余的代码、标签和非必要元素，并提取论文的标题和正文内容。请返回如下格式：\n"
-        f"标题: <论文标题>\n\n"
-        f"正文: <论文正文>\n\n"
-        f"仅保留上述格式，去除无关内容：\n\n"
+        f"请阅读以下论文内容，去除所有与正文无关的代码、标签和多余元素。"
+        f"你只需输出清理后的论文内容，按以下格式提取信息：\n"
+        f"1. 标题: <论文标题>\n"
+        f"2. 正文: <论文正文>\n\n"
+        f"请确保清理后的内容简洁明了，保留论文的完整性，尤其是学术性的段落、句子和格式。不要输出任何不相关的信息或解释。\n\n"
+        f"以下是需要处理的内容：\n\n"
         f"{content}"
     )
     response = ollama_request(prompt) or "清理失败"
@@ -258,23 +260,31 @@ def clean_content(content):
     return "清理失败", "正文提取失败"
 
 
+
 def translate_text(cleaned_content):
     prompt = (
-        f"请将以下论文内容翻译成中文，包括标题和摘要，不要输出无关内容：\n\n"
+        f"请将以下论文的标题和摘要准确翻译成中文，并保留学术严谨性。"
+        f"请按照以下格式输出，不要包含任何无关内容或解释：\n"
+        f"1. 标题: <中文翻译的论文标题>\n"
+        f"2. 摘要: <中文翻译的论文摘要>\n\n"
+        f"需要翻译的内容如下：\n\n"
         f"{cleaned_content}"
     )
     return ollama_request(prompt) or "翻译失败"
 
+
 def summarize_paper(translated_content):
     prompt = (
-        f"请分析以下翻译后的论文内容，并按以下要求总结，不要输出无关内容：\n"
-        f"1. 背景\n"
-        f"2. 解决的问题\n"
-        f"3. 提出的方法\n"
-        f"4. 创新点\n\n"
+        f"请分析以下翻译后的论文内容，并按要求总结以下四个方面，确保清晰简洁，避免无关内容：\n"
+        f"1. 背景: 提供论文研究的背景和动机。\n"
+        f"2. 解决的问题: 明确论文中提出的研究问题或要解决的挑战。\n"
+        f"3. 提出的方法: 详细描述论文中提出的方法或技术。\n"
+        f"4. 创新点: 总结论文中独特的创新贡献或亮点。\n\n"
+        f"以下是需要分析的论文内容：\n\n"
         f"{translated_content}"
     )
     return ollama_request(prompt) or "摘要总结失败"
+
 
 def process_paper(url):
     markdown_content = firecrawl_crawl(url)
