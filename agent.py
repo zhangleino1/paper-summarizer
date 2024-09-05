@@ -34,7 +34,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 2  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 1  # Set this to the number of recent days you want to filter emails by
 
 Model = "qwen2:7b"
 
@@ -172,7 +172,7 @@ def firecrawl_submit_crawl(url):
             },
             json={
                 'url': url,
-                'limit': 100,
+                'limit': 1,
                 'scrapeOptions': {
                     'formats': ['markdown']
                 }
@@ -234,10 +234,9 @@ def ollama_request(prompt):
     except requests.RequestException as e:
         logging.error(f"Error in Ollama request: {e}")
         return None
-
 def clean_content(content):
     prompt = (
-        f"请阅读以下论文内容，去除所有与正文无关的代码、标签和多余元素。"
+        f"你擅长论文的分析和整理，请阅读以下论文内容，去除所有与正文无关的代码、标签和多余元素。"
         f"你只需输出清理后的论文内容，按以下格式提取信息：\n"
         f"1. 标题: <论文标题>\n"
         f"2. 正文: <论文正文>\n\n"
@@ -260,22 +259,34 @@ def clean_content(content):
     return "清理失败", "正文提取失败"
 
 
-
 def translate_text(cleaned_content):
     prompt = (
-        f"请将以下论文的标题和摘要准确翻译成中文，并保留学术严谨性。"
+        f"你是深度学习、室内定位、大模型专家，擅长翻译，请将以下论文的标题和正文准确翻译成中文，并保留学术严谨性。"
         f"请按照以下格式输出，不要包含任何无关内容或解释：\n"
         f"1. 标题: <中文翻译的论文标题>\n"
-        f"2. 摘要: <中文翻译的论文摘要>\n\n"
+        f"2. 正文: <中文翻译的论文正文>\n\n"
         f"需要翻译的内容如下：\n\n"
         f"{cleaned_content}"
     )
     return ollama_request(prompt) or "翻译失败"
 
 
+def check_and_optimize_translation(translated_content):
+    if not translated_content.strip():
+        return "检查失败", "内容为空"
+    
+    prompt = (
+        f"你是一名学术翻译专家，请仔细检查以下翻译后的论文内容，确保其完整性、学术严谨性，"
+        f"并去除任何无关内容，如翻译错误、冗余信息等。确保输出结果简洁且准确。\n"
+        f"以下是翻译后的内容：\n\n"
+        f"{translated_content}"
+    )
+    return ollama_request(prompt) or "检查失败"
+
+
 def summarize_paper(translated_content):
     prompt = (
-        f"请分析以下翻译后的论文内容，并按要求总结以下四个方面，确保清晰简洁，避免无关内容：\n"
+        f"你是深度学习、室内定位、大模型专家，请分析以下翻译后的论文内容，并按要求总结以下四个方面，确保清晰简洁，避免无关内容：\n"
         f"1. 背景: 提供论文研究的背景和动机。\n"
         f"2. 解决的问题: 明确论文中提出的研究问题或要解决的挑战。\n"
         f"3. 提出的方法: 详细描述论文中提出的方法或技术。\n"
@@ -289,15 +300,24 @@ def summarize_paper(translated_content):
 def process_paper(url):
     markdown_content = firecrawl_crawl(url)
     logging.info(f"Processing paper markdown_content: {markdown_content}")
-    if markdown_content:
+    if markdown_content and markdown_content['markdown']:
         title, cleaned_content = clean_content(markdown_content)
         translated_content = translate_text(cleaned_content)
-        summary = summarize_paper(translated_content)
+
+        # 检查翻译内容并优化
+        checked_translated_content = check_and_optimize_translation(translated_content)
+        
+        # 如果检查后内容为空，则忽略该论文
+        if "内容为空" in checked_translated_content:
+            logging.info(f"Skipping paper due to empty content: {url}")
+            return None
+        
+        summary = summarize_paper(checked_translated_content)
         return {
             'url': url,
             'title': title,
             'cleaned_content': cleaned_content,
-            'translated_content': translated_content,
+            'translated_content': checked_translated_content,
             'summary': summary
         }
     return None
