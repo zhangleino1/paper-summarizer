@@ -22,33 +22,34 @@ from langchain_ollama import ChatOllama
 
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
-llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+llm = ChatOllama(model="qwen2:7b", base_url="http://localhost:11434")
 
-# Define Clean Content Agent
+
+# 定义内容清理 Agent
 clean_content_agent = Agent(
-    role="Content Cleaner",
-    goal="Clean and structure Markdown content, removing unnecessary elements and extracting meaningful text.",
-    backstory="You are an expert in content cleaning, focusing on structuring academic papers into clear, readable Markdown format.",
+    role="内容清理专家",
+    goal="清理并结构化Markdown内容，去除不必要的元素，提取有意义的文本。",
+    backstory="你是清理内容的专家，专注于将学术论文结构化为清晰、可读的Markdown格式。",
     allow_delegation=False,
     verbose=True,
     llm=llm
 )
 
-# Define Translate Agent
+# 定义翻译 Agent
 translate_agent = Agent(
-    role="Academic Translator",
-    goal="Translate cleaned academic content into Chinese, maintaining academic rigor and clarity.",
-    backstory="You are a professional translator specializing in academic texts, skilled at preserving technical accuracy in Chinese translations.",
+    role="学术翻译专家",
+    goal="将清理后的学术内容翻译成中文，确保学术严谨性和清晰度。",
+    backstory="你是一名专业翻译，擅长学术文本的翻译，确保技术术语在中文翻译中的准确性。",
     allow_delegation=False,
     verbose=True,
     llm=llm
 )
 
-# Define Summarize Agent
+# 定义总结 Agent
 summarize_agent = Agent(
-    role="Research Summarizer",
-    goal="Summarize translated content, highlighting key aspects including background, research questions, methodology, and innovations.",
-    backstory="You are an experienced academic researcher capable of distilling complex papers into concise, informative summaries.",
+    role="研究总结专家",
+    goal="总结翻译后的内容，重点包括背景、研究问题、方法和创新点。",
+    backstory="你是一名经验丰富的学术研究人员，能够将复杂的论文浓缩为简洁且信息丰富的总结。",
     allow_delegation=False,
     verbose=True,
     llm=llm
@@ -56,23 +57,23 @@ summarize_agent = Agent(
 
 def create_clean_content_task(markdown_content):
     return Task(
-        description=f"Clean and structure the following Markdown content into a well-formatted academic paper layout:\n\n{markdown_content}",
+        description=f"清理并结构化以下Markdown内容，将其转换为学术论文的格式：\n\n{markdown_content}",
         agent=clean_content_agent,
-        expected_output="Cleaned and structured Markdown content with appropriate headings (e.g., Abstract, Introduction, Methodology, Results, Conclusion)."
+        expected_output="清理并结构化的Markdown内容，包含适当的标题（例如，摘要、引言、方法、结果、结论）。"
     )
 
 def create_translate_task():
     return Task(
-        description="Translate the cleaned content into Chinese, maintaining the Markdown structure and academic terminology.",
+        description="将清理后的内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
         agent=translate_agent,
-        expected_output="Chinese translation of the academic content in Markdown format, preserving the original structure and headings."
+        expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题。"
     )
 
 def create_summarize_task():
     return Task(
-        description="Summarize the translated content, creating a structured Markdown summary with the following sections:\n\n# 研究摘要\n## 背景\n## 研究问题\n## 方法\n## 主要发现\n## 创新点\n\nEnsure each section is concise yet informative.",
+        description="总结翻译后的内容，创建以下结构化的Markdown摘要：\n\n# 研究摘要\n## 背景\n## 研究问题\n## 方法\n## 主要发现\n## 创新点\n\n确保每个部分简明扼要，信息丰富。",
         agent=summarize_agent,
-        expected_output="A structured Markdown summary in Chinese with appropriate headings for each key aspect of the research paper."
+        expected_output="中文的结构化Markdown摘要，包含适当的标题，总结论文的关键方面。"
     )
 
 # Load environment variables
@@ -283,7 +284,9 @@ def firecrawl_crawl(url):
 
 
 
-def process_paper(url, markdown_content):
+def process_paper(url):
+    markdown_content = firecrawl_crawl(url)
+    logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content and markdown_content['markdown']:
         crew = Crew(
             agents=[clean_content_agent, translate_agent, summarize_agent],
