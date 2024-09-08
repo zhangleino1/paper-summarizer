@@ -27,9 +27,9 @@ llm = ChatOllama(model="qwen2:7b", base_url="http://localhost:11434")
 
 # 定义内容清理 Agent
 clean_content_agent = Agent(
-    role="内容清理专家",
-    goal="清理并结构化Markdown内容，去除不必要的元素，提取有意义的文本。",
-    backstory="你是清理内容的专家，专注于将学术论文结构化为清晰、可读的Markdown格式。",
+    role="网页内容清理专家",
+    goal="清理并结构化网页内容，去除不必要的元素，提取有意义的文本。",
+    backstory="你是清理网页内容的专家，专注于将网页内容结构化为清晰、可读的Markdown格式。",
     allow_delegation=False,
     verbose=True,
     llm=llm
@@ -57,23 +57,23 @@ summarize_agent = Agent(
 
 def create_clean_content_task(markdown_content):
     return Task(
-        description=f"清理并结构化以下Markdown内容，将其转换为学术论文的格式：\n\n{markdown_content}",
+        description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
         agent=clean_content_agent,
-        expected_output="清理并结构化的Markdown内容，包含适当的标题（例如，摘要、引言、方法、结果、结论）。"
+        expected_output="输出论文内容，包含：标题、摘要、引言、方法、结果、结论。用Markdown格式输出。"
     )
 
 def create_translate_task():
     return Task(
-        description="将清理后的内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
+        description="将清理后的网页内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
         agent=translate_agent,
         expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题。"
     )
 
 def create_summarize_task():
     return Task(
-        description="总结翻译后的内容，创建以下结构化的Markdown摘要：\n\n# 研究摘要\n## 背景\n## 研究问题\n## 方法\n## 主要发现\n## 创新点\n\n确保每个部分简明扼要，信息丰富。",
+        description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n确保每个部分保持原意。",
         agent=summarize_agent,
-        expected_output="中文的结构化Markdown摘要，包含适当的标题，总结论文的关键方面。"
+        expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题。"
     )
 
 # Load environment variables
@@ -268,7 +268,7 @@ def firecrawl_crawl(url):
     if not job_id:
         return None
 
-    max_attempts = 12  # 1 minute total waiting time
+    max_attempts = 20  # 1 minute total waiting time
     for _ in range(max_attempts):
         result = firecrawl_check_crawl(job_id)
         if result and result['status'] == 'completed':
@@ -276,7 +276,7 @@ def firecrawl_crawl(url):
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(5)  # Wait for 5 seconds before checking again
+        time.sleep(6)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -301,14 +301,9 @@ def process_paper(url):
         
         # Format the final output
         formatted_output = f"""
-        # 论文概要
-
+        {result}
         ## 原文链接
         {url}
-
-        {result}
-
-        ---
         """
         return formatted_output
     return None
