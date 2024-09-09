@@ -49,7 +49,7 @@ translate_agent = Agent(
 summarize_agent = Agent(
     role="研究总结专家",
     goal="总结翻译后的内容，重点包括背景、研究问题、方法和创新点。",
-    backstory="你是一名经验丰富的学术研究人员，能够将复杂的论文浓缩为简洁且信息丰富的总结。",
+    backstory="你是一名经验丰富的学术研究人员，能够将复杂的论文进行梳理，总结，方便阅读。",
     allow_delegation=False,
     verbose=True,
     llm=llm
@@ -271,12 +271,13 @@ def firecrawl_crawl(url):
     max_attempts = 20  # 1 minute total waiting time
     for _ in range(max_attempts):
         result = firecrawl_check_crawl(job_id)
+        logging.info(f"Crawl job result: {result}") 
         if result and result['status'] == 'completed':
             return {"markdown":result['data'][0]['markdown'] ,"metadata":result['data'][0]['metadata']} # Assuming we want the first page's markdown
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(6)  # Wait for 5 seconds before checking again
+        time.sleep(60)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -301,9 +302,9 @@ def process_paper(url):
         
         # Format the final output
         formatted_output = f"""
-        {result}
+        {result} \n\n
         ## 原文链接
-        {url}
+        {url} \n\n
         """
         return formatted_output
     return None
