@@ -59,21 +59,21 @@ def create_clean_content_task(markdown_content):
     return Task(
         description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
         agent=clean_content_agent,
-        expected_output="输出论文内容，包含：标题、摘要、引言、方法、结果、结论。用Markdown格式输出。"
+        expected_output="输出论文内容，包含：标题、摘要、引言、方法、结果、结论。用Markdown格式输出,不要输出任何无关内容。"
     )
 
 def create_translate_task():
     return Task(
         description="将清理后的网页内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
         agent=translate_agent,
-        expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题。"
+        expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
     )
 
 def create_summarize_task():
     return Task(
         description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n确保每个部分保持原意。",
         agent=summarize_agent,
-        expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题。"
+        expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
     )
 
 # Load environment variables
@@ -223,6 +223,7 @@ def extract_urls(content):
 
 def firecrawl_submit_crawl(url):
     logging.info(f"Submitting crawl job for URL: {url}")
+    print(f"Submitting crawl job for URL: {url}")
     try:
         response = requests.post(
             f'{FIRECRAWL_API_URL}/crawl',
@@ -231,7 +232,7 @@ def firecrawl_submit_crawl(url):
             },
             json={
                 'url': url,
-                'limit': 100,
+                'limit': 1,
                 'scrapeOptions': {
                     'formats': ['markdown']
                 }
@@ -268,16 +269,17 @@ def firecrawl_crawl(url):
     if not job_id:
         return None
 
-    max_attempts = 20  # 1 minute total waiting time
+    max_attempts = 60  # 1 minute total waiting time
     for _ in range(max_attempts):
         result = firecrawl_check_crawl(job_id)
         logging.info(f"Crawl job result: {result}") 
+        print(f"Crawl job result: {result}") 
         if result and result['status'] == 'completed':
             return {"markdown":result['data'][0]['markdown'] ,"metadata":result['data'][0]['metadata']} # Assuming we want the first page's markdown
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(60)  # Wait for 5 seconds before checking again
+        time.sleep(5)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -301,11 +303,7 @@ def process_paper(url):
         result = crew.kickoff()
         
         # Format the final output
-        formatted_output = f"""
-        {result} \n\n
-        ## 原文链接
-        {url} \n\n
-        """
+        formatted_output = f"""{result} \n\n## 原文链接{url} \n\n"""
         return formatted_output
     return None
 
