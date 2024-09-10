@@ -82,43 +82,42 @@ def summarize_agent():
 def create_clean_content_task(markdown_content):
     return Task(
         description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
-        agent=clean_content_agent,
+        agent=clean_content_agent(),
         expected_output="输出论文内容，包含：标题、摘要、引言、方法、结果、结论。用Markdown格式输出,不要输出任何无关内容。"
     )
 
 def create_translate_task():
     return Task(
         description="将清理后的网页内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
-        agent=translate_agent,
+        agent=translate_agent(),
         expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
     )
 
 def create_summarize_task():
     return Task(
         description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n确保每个部分保持原意。",
-        agent=summarize_agent,
+        agent=summarize_agent(),
         expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
     )
 
 
+def paper_type_agent():
+    return Agent(
+        role="文献类型判断专家",
+        goal="判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。",
+        backstory="你是一名文献类型判断专家，专注于判断文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。",
+        allow_delegation=False,
+        verbose=True,
+        llm=llm,
+    )
+def create_paper_type_task(content):
+    return Task(
+        description="判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。论文内容如下：\n\n{content}",
+        agent=paper_type_agent(),
+        expected_output="输出文献类型：'大模型/AI Agent' 或 '室内定位/惯性导航'，如果不属于这两种类型，返回 '忽略'，不能输出任何其他内容。"
+    )
 
 
-def ollama_request(prompt):
-    try:
-        response = requests.post('http://localhost:11434/api/chat', json={
-            "model": Model,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream": False
-        })
-        response.raise_for_status()
-        return response.json()['message']['content']
-    except requests.RequestException as e:
-        logging.error(f"Error in Ollama request: {e}")
-        return None
-
-def get_paper_type(content):
-    prompt = f"判断以下内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。返回文献类型：'大模型/AI Agent' 或 '室内定位/惯性导航'，如果不属于这两种类型，返回 '忽略'。\n\n{content}"
-    return ollama_request(prompt)
 
 
 
@@ -283,7 +282,7 @@ def firecrawl_crawl(url):
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(5)  # Wait for 5 seconds before checking again
+        time.sleep(30)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -296,7 +295,13 @@ def process_paper(url):
     logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content and markdown_content['markdown']:
          # 判断类型
-        paper_type = get_paper_type(markdown_content['markdown'])  # 假设第一个任务返回文献类型
+        paper_type_crew = Crew(
+            agents=[paper_type_agent()],
+            tasks=[create_paper_type_task(markdown_content['markdown'])],
+            telemetry=False,
+            verbose=True
+        )
+        paper_type = paper_type_crew.kickoff()
         logging.info(f"Paper type: {paper_type}")
         print(f"Paper type: {paper_type}")
         if paper_type == "忽略":
