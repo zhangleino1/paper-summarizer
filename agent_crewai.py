@@ -112,7 +112,7 @@ def paper_type_agent():
     )
 def create_paper_type_task(content):
     return Task(
-        description="判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。论文内容如下：\n\n{content}",
+        description=f"判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。论文内容如下：\n\n{content}",
         agent=paper_type_agent(),
         expected_output="输出文献类型：'大模型/AI Agent' 或 '室内定位/惯性导航'，如果不属于这两种类型，返回 '忽略'，不能输出任何其他内容。"
     )
@@ -238,7 +238,9 @@ def firecrawl_submit_crawl(url):
                 'limit': 1,
                 'scrapeOptions': {
                     'formats': ['markdown']
-                }
+                },
+                "maxDepth": 1,
+                "limit": 1,
             }
         )
         response.raise_for_status()
@@ -272,7 +274,7 @@ def firecrawl_crawl(url):
     if not job_id:
         return None
 
-    max_attempts = 60  # 1 minute total waiting time
+    max_attempts = 120  # 1 minute total waiting time
     for _ in range(max_attempts):
         result = firecrawl_check_crawl(job_id)
         logging.info(f"Crawl job result: {result}") 
@@ -282,7 +284,7 @@ def firecrawl_crawl(url):
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
             return None
-        time.sleep(30)  # Wait for 5 seconds before checking again
+        time.sleep(10)  # Wait for 5 seconds before checking again
     
     logging.error(f"Crawl job timed out for URL: {url}")
     return None
@@ -294,20 +296,7 @@ def process_paper(url):
     markdown_content = firecrawl_crawl(url)
     logging.info(f"Processing paper markdown_content: {markdown_content}")
     if markdown_content and markdown_content['markdown']:
-         # 判断类型
-        paper_type_crew = Crew(
-            agents=[paper_type_agent()],
-            tasks=[create_paper_type_task(markdown_content['markdown'])],
-            telemetry=False,
-            verbose=True
-        )
-        paper_type = paper_type_crew.kickoff()
-        logging.info(f"Paper type: {paper_type}")
-        print(f"Paper type: {paper_type}")
-        if paper_type == "忽略":
-            logging.info(f"Ignoring paper from URL: {url}")
-            print(f"Ignoring paper from URL: {url}")
-            return None
+        
         # 添加类型判断
         crew = Crew(
             agents=[ clean_content_agent(), translate_agent(), summarize_agent()],
@@ -316,20 +305,33 @@ def process_paper(url):
                 create_translate_task(),
                 create_summarize_task()
             ],
-            telemetry=False,
+            share_crew=False,
             verbose=True
         )
 
-        result = crew.kickoff()
+        result = crew.kickoff().raw
         
-       
+        # 判断类型
+        paper_type_crew = Crew(
+            agents=[paper_type_agent()],
+            tasks=[create_paper_type_task(result)],
+            share_crew=False,
+            verbose=True
+        )
+        paper_type = paper_type_crew.kickoff().raw
+        logging.info(f"Paper type: {paper_type}")
+        print(f"Paper type: {paper_type}")
+        if "忽略" in paper_type :
+            logging.info(f"Ignoring paper from URL: {url}")
+            print(f"Ignoring paper from URL: {url}")
+            return None
 
         # 根据类型设置文件名称
         now = datetime.now()
         now_str = now.strftime("%Y%m%d")
-        if paper_type == "大模型/AI Agent":
+        if "大模型/AI Agent" in paper_type  :
             output_file = f"{now_str}_大模型_AIAgent.md"
-        elif paper_type == "室内定位/惯性导航":
+        elif "室内定位/惯性导航" in paper_type :
             output_file = f"{now_str}_室内定位_IMU.md"
         else:
             logging.warning(f"Unrecognized type for paper from URL: {url}")
