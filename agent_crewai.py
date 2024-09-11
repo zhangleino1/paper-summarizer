@@ -37,7 +37,8 @@ PASSWORD = os.getenv('QQ_PASSWORD')
 
 # Firecrawl API settings
 FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
-FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
+# firecrawl 这里我是用自己建的，通过docker跑的，也可以调用在线的不过字符数有限
+FIRECRAWL_API_URL = 'http://localhost:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
