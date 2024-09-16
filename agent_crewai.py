@@ -17,7 +17,7 @@ import re
 from urllib.parse import urlparse, parse_qs, unquote
 from crewai import Agent, Task, Crew
 from langchain_ollama import ChatOllama
-
+from crewai.telemetry import Telemetry
 import faulthandler
 faulthandler.enable()
 import threading
@@ -28,11 +28,21 @@ def print_tracebacks():
 print_tracebacks()
 
 
+
+def noop(*args, **kwargs):
+    print("Telemetry method called and noop'd\n")
+    pass
+
+
+for attr in dir(Telemetry):
+    if callable(getattr(Telemetry, attr)) and not attr.startswith("__"):
+        setattr(Telemetry, attr, noop)
+
 Model = "qwen2:7b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
 llm = ChatOllama(model=Model, base_url="http://localhost:11434")
-
+os.environ["OTEL_SDK_DISABLED"] = "true"
 # Load environment variables
 load_dotenv()
 
@@ -50,7 +60,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 4  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 5  # Set this to the number of recent days you want to filter emails by
 
 
 
