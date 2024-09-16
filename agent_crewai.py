@@ -19,6 +19,7 @@ from crewai import Agent, Task, Crew
 from langchain_ollama import ChatOllama
 from crewai.telemetry import Telemetry
 import faulthandler
+
 faulthandler.enable()
 import threading
 def print_tracebacks():
@@ -26,7 +27,6 @@ def print_tracebacks():
     faulthandler.dump_traceback()
 
 print_tracebacks()
-
 
 
 def noop(*args, **kwargs):
@@ -42,7 +42,8 @@ Model = "qwen2:7b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
 llm = ChatOllama(model=Model, base_url="http://localhost:11434")
-os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "True"
+os.environ['CREWAI_TELEMETRY_OPT_OUT'] = 'True'
 # Load environment variables
 load_dotenv()
 
@@ -60,7 +61,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 5  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 6  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -352,9 +353,9 @@ def process_paper(url):
         now = datetime.now()
         now_str = now.strftime("%Y%m%d")
         if "大模型/AI Agent" in paper_type  :
-            output_file = f"{now_str}_大模型_AIAgent.md"
+            output_file = f"{now_str}_大模型"
         elif "室内定位/惯性导航" in paper_type :
-            output_file = f"{now_str}_室内定位_IMU.md"
+            output_file = f"{now_str}_室内定位"
         else:
             logging.warning(f"Unrecognized type for paper from URL: {url}")
             return None
@@ -380,7 +381,11 @@ def main():
         result = process_paper(url)
         if result:
             output_file, formatted_output = result
-            with open(output_file, 'a', encoding='utf-8') as f:
+            # 判断文件是否存在，如果不存在创建文件增加metadata
+            if not os.path.exists(output_file+".md"):
+                with open(output_file+".md", 'w', encoding='utf-8') as f:
+                    f.write(f"--- \nlang: zh-CN \ntitle: {output_file} \ndescription: {output_file} \n--- \n\n")
+            with open(output_file+".md", 'a', encoding='utf-8') as f:
                 f.write(f"{formatted_output}\n\n")
             logging.info(f"Processed and wrote result for URL: {url}")
         else:
