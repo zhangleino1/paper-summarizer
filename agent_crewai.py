@@ -137,7 +137,7 @@ def create_paper_type_task(content):
             f"判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。"
             f"你可以通过查找文献中的关键字来帮助判断，例如："
             f"如果文献中包含'室内定位'、'惯性导航'、'惯性传感器'、'GPS','蓝牙','WIFI','lidar','uwb','led','indoor positioning'等字样，则可能属于'室内定位/惯性导航'类型；"
-            f"如果文献中包含'大模型'、'AI Agent','large language model','大语言模型'等字样，则可能属于'大模型/AI Agent'类型。"
+            f"如果文献中包含'大模型'、'AI Agent','large language model','大语言模型','生成式模型','generation godel'等字样，则可能属于'大模型/AI Agent'类型。"
             f"论文内容如下：\n\n{content}"
         ),
         agent=paper_type_agent(),
