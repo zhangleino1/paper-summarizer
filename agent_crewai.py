@@ -1,12 +1,10 @@
 import os
 import time
 import requests
-import concurrent.futures
 import logging
 import imaplib
 import email
 from email import policy
-from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -19,11 +17,33 @@ import re
 from urllib.parse import urlparse, parse_qs, unquote
 from crewai import Agent, Task, Crew
 from langchain_ollama import ChatOllama
+from crewai.telemetry import Telemetry
+import faulthandler
+
+faulthandler.enable()
+import threading
+def print_tracebacks():
+    threading.Timer(60, print_tracebacks).start()  # 每5秒打印一次
+    faulthandler.dump_traceback()
+
+print_tracebacks()
+
+
+def noop(*args, **kwargs):
+    print("Telemetry method called and noop'd\n")
+    pass
+
+
+for attr in dir(Telemetry):
+    if callable(getattr(Telemetry, attr)) and not attr.startswith("__"):
+        setattr(Telemetry, attr, noop)
+
 Model = "qwen2:7b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
 llm = ChatOllama(model=Model, base_url="http://localhost:11434")
-
+os.environ["OTEL_SDK_DISABLED"] = "True"
+os.environ['CREWAI_TELEMETRY_OPT_OUT'] = 'True'
 # Load environment variables
 load_dotenv()
 
@@ -37,12 +57,11 @@ PASSWORD = os.getenv('QQ_PASSWORD')
 
 # Firecrawl API settings
 FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
-# firecrawl 这里我是用自己建的，通过docker跑的，也可以调用在线的不过字符数有限
-FIRECRAWL_API_URL = 'http://localhost:3002/v1'
+FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 14  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 6  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -256,6 +275,8 @@ def firecrawl_submit_crawl(url):
     return None
 
 def firecrawl_check_crawl(job_id):
+    logging.info(f"Checking crawl job: {job_id}")
+    print(f"Checking crawl job: {job_id}")
     try:
         response = requests.get(
             f'{FIRECRAWL_API_URL}/crawl/{job_id}',
@@ -271,6 +292,7 @@ def firecrawl_check_crawl(job_id):
 
 def firecrawl_crawl(url):
     logging.info(f"Processing URL: {url}")
+    print(f"Processing URL: {url}")
     job_id = firecrawl_submit_crawl(url)
     if not job_id:
         return None
@@ -331,9 +353,9 @@ def process_paper(url):
         now = datetime.now()
         now_str = now.strftime("%Y%m%d")
         if "大模型/AI Agent" in paper_type  :
-            output_file = f"{now_str}_大模型_AIAgent.md"
+            output_file = f"{now_str}_大模型"
         elif "室内定位/惯性导航" in paper_type :
-            output_file = f"{now_str}_室内定位_IMU.md"
+            output_file = f"{now_str}_室内定位"
         else:
             logging.warning(f"Unrecognized type for paper from URL: {url}")
             return None
@@ -359,7 +381,11 @@ def main():
         result = process_paper(url)
         if result:
             output_file, formatted_output = result
-            with open(output_file, 'a', encoding='utf-8') as f:
+            # 判断文件是否存在，如果不存在创建文件增加metadata
+            if not os.path.exists(output_file+".md"):
+                with open(output_file+".md", 'w', encoding='utf-8') as f:
+                    f.write(f"--- \nlang: zh-CN \ntitle: {output_file} \ndescription: {output_file} \n--- \n\n")
+            with open(output_file+".md", 'a', encoding='utf-8') as f:
                 f.write(f"{formatted_output}\n\n")
             logging.info(f"Processed and wrote result for URL: {url}")
         else:
