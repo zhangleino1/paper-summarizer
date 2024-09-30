@@ -61,7 +61,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 6  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 5  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -103,7 +103,7 @@ def create_clean_content_task(markdown_content):
     return Task(
         description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
         agent=clean_content_agent(),
-        expected_output="输出论文内容，包含：标题、摘要、引言、方法、结果、结论。用Markdown格式输出,不要输出任何无关内容。"
+        expected_output="输出论文内容，包含：标题、摘要、方法、结果、结论。用Markdown格式输出,不要输出任何无关内容。"
     )
 
 def create_translate_task():
@@ -136,8 +136,8 @@ def create_paper_type_task(content):
         description=(
             f"判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。"
             f"你可以通过查找文献中的关键字来帮助判断，例如："
-            f"如果文献中包含'室内定位'、'惯性导航'、'惯性传感器'、'GPS','蓝牙','WIFI','lidar','uwb','led','indoor positioning'等字样，则可能属于'室内定位/惯性导航'类型；"
-            f"如果文献中包含'大模型'、'AI Agent','large language model','大语言模型','生成式模型','generation godel'等字样，则可能属于'大模型/AI Agent'类型。"
+            f"如果文献中包含'定位','室内定位'、'惯性导航'、'惯性传感器'、'GPS','蓝牙','WIFI','lidar','uwb','led','indoor positioning','激光雷达'、'超宽带'、''惯性测量单元'等字样，则可能属于'室内定位/惯性导航'类型；"
+            f"如果文献中包含'大模型'、'AI Agent','large language model','大语言模型','生成式模型','generation model','代理'等字样，则可能属于'大模型/AI Agent'类型。"
             f"论文内容如下：\n\n{content}"
         ),
         agent=paper_type_agent(),
@@ -196,6 +196,10 @@ def fetch_email_content(mail, email_id):
         # Check the sender
         if email_message['From'] and SENDER_EMAIL not in email_message['From']:
             logging.info(f"Email ID {email_id} is not from the expected sender.")
+            return None
+        subject = email_message['Subject']
+        if "新的" not in subject:
+            logging.info(f"Email ID {email_id} subject does not contain '新的'.")
             return None
 
         # Check the date
@@ -270,7 +274,7 @@ def firecrawl_submit_crawl(url):
                 'scrapeOptions': {
                     'formats': ['markdown']
                 },
-                "maxDepth": 1,
+                "maxDepth": 0,
                 "limit": 1,
             }
         )
