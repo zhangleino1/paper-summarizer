@@ -392,6 +392,7 @@ def main():
         if content:
             all_paper_urls.extend(extract_urls(content))
     # print size
+    print(f'-----------all size: {len(all_paper_urls)}')
     count = 0;
     for url in all_paper_urls:
         result = process_paper(url)
@@ -408,7 +409,7 @@ def main():
             logging.warning(f"Failed to process URL: {url}")
         count += 1
         # print all and current count
-        print('all size: '+len(all_paper_urls)+" ;current size: "+count)
+        print(f'-----------all size: {len(all_paper_urls)} ;current size: {count}------------------')
 
     logging.info("All papers processed.")
             
