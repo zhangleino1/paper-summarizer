@@ -391,7 +391,8 @@ def main():
         content = fetch_email_content(mail, email_id)
         if content:
             all_paper_urls.extend(extract_urls(content))
-
+    # print size
+    count = 0;
     for url in all_paper_urls:
         result = process_paper(url)
         if result:
@@ -405,6 +406,9 @@ def main():
             logging.info(f"Processed and wrote result for URL: {url}")
         else:
             logging.warning(f"Failed to process URL: {url}")
+        count += 1
+        # print all and current count
+        print('all size: '+len(all_paper_urls)+" ;current size: "+count)
 
     logging.info("All papers processed.")
             
