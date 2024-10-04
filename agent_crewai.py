@@ -38,7 +38,7 @@ for attr in dir(Telemetry):
     if callable(getattr(Telemetry, attr)) and not attr.startswith("__"):
         setattr(Telemetry, attr, noop)
 
-Model = "qwen2:7b"
+Model = "qwen2.5:14b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
 llm = ChatOllama(model=Model, base_url="http://localhost:11434")
