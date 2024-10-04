@@ -92,7 +92,7 @@ def translate_agent():
 def summarize_agent():
     return Agent(
         role="研究总结专家",
-        goal="总结翻译后的内容，重点包括背景、研究问题、方法和创新点。",
+        goal="总结翻译后的内容，重点包括标题、研究问题、方法、创新点、结论。",
         backstory="你是一名经验丰富的学术研究人员，能够将复杂的论文进行梳理，总结，方便阅读。",
         allow_delegation=False,
         verbose=True,
@@ -103,7 +103,7 @@ def create_clean_content_task(markdown_content):
     return Task(
         description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
         agent=clean_content_agent(),
-        expected_output="输出论文内容，包含：标题、摘要、方法、结果、结论。用Markdown格式输出,不要输出任何无关内容。"
+        expected_output="输出论文内容，包含：标题、研究问题、方法、创新点、结论。用Markdown格式输出,不要输出任何无关内容。"
     )
 
 def create_translate_task():
@@ -115,7 +115,7 @@ def create_translate_task():
 
 def create_summarize_task():
     return Task(
-        description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n确保每个部分保持原意。",
+        description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n结论\n\n确保每个部分保持原意。",
         agent=summarize_agent(),
         expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
     )
