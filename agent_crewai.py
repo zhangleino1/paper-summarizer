@@ -61,7 +61,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 5  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 1  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -393,8 +393,21 @@ def main():
             all_paper_urls.extend(extract_urls(content))
     # print size
     print(f'-----------all size: {len(all_paper_urls)}')
+
+    # 根据今天的日期获取对应的文件，读取文件内容，返回一个数组 对应元素是Url
+    # 读取文件内容
+    sucess_urls = []
+    now = datetime.now()
+    now_str = now.strftime("%Y%m%d")
+    with open(f"{now_str}_urls.txt", 'r', encoding='utf-8') as f:
+        for line in f.readlines():
+            sucess_urls.append(line.strip())
+
     count = 0;
     for url in all_paper_urls:
+        if url in sucess_urls:
+            logging.info(f"URL: {url} has been processed before.")
+            continue
         result = process_paper(url)
         if result:
             output_file, formatted_output = result
@@ -405,6 +418,9 @@ def main():
             with open(output_file+".md", 'a', encoding='utf-8') as f:
                 f.write(f"{formatted_output}\n\n")
             logging.info(f"Processed and wrote result for URL: {url}")
+            # 写入成功的url
+            with open(f"{now_str}_urls.txt", 'a', encoding='utf-8') as f:
+                f.write(f"{url}\n")
         else:
             logging.warning(f"Failed to process URL: {url}")
         count += 1
