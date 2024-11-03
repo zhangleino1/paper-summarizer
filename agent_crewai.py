@@ -15,15 +15,15 @@ import re
 import backoff
 import re
 from urllib.parse import urlparse, parse_qs, unquote
-from crewai import Agent, Task, Crew
-from langchain_ollama import ChatOllama
+from crewai import Agent, Task, Crew,LLM
 from crewai.telemetry import Telemetry
+
 import faulthandler
 
 faulthandler.enable()
 import threading
 def print_tracebacks():
-    threading.Timer(60, print_tracebacks).start()  # 每5秒打印一次
+    threading.Timer(120, print_tracebacks).start()  # 每5秒打印一次
     faulthandler.dump_traceback()
 
 print_tracebacks()
@@ -38,12 +38,13 @@ for attr in dir(Telemetry):
     if callable(getattr(Telemetry, attr)) and not attr.startswith("__"):
         setattr(Telemetry, attr, noop)
 
-Model = "qwen2.5:14b"
+Model = "ollama/qwen2.5:14b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
-llm = ChatOllama(model=Model, base_url="http://localhost:11434")
+os.environ["OPENAI_API_KEY"] = "your_openai_api_key"
+llm = LLM(model=Model, base_url="http://localhost:11434",api_key="your_openai_api_key")
 os.environ["OTEL_SDK_DISABLED"] = "True"
-os.environ['CREWAI_TELEMETRY_OPT_OUT'] = 'True'
+os.environ['CREWAI_TELEMETRY_OPT_OUT'] = 'FALSE'
 # Load environment variables
 load_dotenv()
 
@@ -61,7 +62,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 1  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 11  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -393,20 +394,29 @@ def main():
             all_paper_urls.extend(extract_urls(content))
     # print size
     print(f'-----------all size: {len(all_paper_urls)}')
+    # all_paper_urls 写入文件
+    now = datetime.now()
+    now_str = now.strftime("%Y%m%d")
+    with open(f"{now_str}_all_urls.txt", 'w', encoding='utf-8') as f:
+        for url in all_paper_urls:
+            f.write(f"{url}\n")
 
     # 根据今天的日期获取对应的文件，读取文件内容，返回一个数组 对应元素是Url
     # 读取文件内容
     sucess_urls = []
     now = datetime.now()
     now_str = now.strftime("%Y%m%d")
-    with open(f"{now_str}_urls.txt", 'r', encoding='utf-8') as f:
-        for line in f.readlines():
-            sucess_urls.append(line.strip())
+    if  os.path.exists(f"{now_str}_urls.txt"):
+        with open(f"{now_str}_urls.txt", 'r', encoding='utf-8') as f:
+            for line in f.readlines():
+                sucess_urls.append(line.strip())
 
     count = 0;
     for url in all_paper_urls:
         if url in sucess_urls:
             logging.info(f"URL: {url} has been processed before.")
+            count += 1
+            print(f'-----------all size: {len(all_paper_urls)} ;current size: {count}------------------')
             continue
         result = process_paper(url)
         if result:
