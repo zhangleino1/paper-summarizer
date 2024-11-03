@@ -95,6 +95,7 @@ def create_process_task(markdown_content):
             "## 创新点\n"
             "## 结论\n\n"
             "请以 Markdown 格式呈现，不要输出任何无关内容，参考文献也不需要输出。"
+            "标题、研究问题、方法、创新点和结论都必须输出中文。"
         )
     )
 
@@ -364,6 +365,9 @@ def main():
         content = fetch_email_content(mail, email_id)
         if content:
             all_paper_urls.extend(extract_urls(content))
+
+    #all_paper_urls 去重
+    all_paper_urls = list(set(all_paper_urls))
     # print size
     print(f'-----------all size: {len(all_paper_urls)}')
     # all_paper_urls 写入文件
