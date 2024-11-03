@@ -67,66 +67,44 @@ DAYS_RECENT = 11  # Set this to the number of recent days you want to filter ema
 
 
 os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
-# 定义内容清理 Agent
-def clean_content_agent():
-    return  Agent(
-                role="网页内容清理专家",
-                goal="清理并结构化网页内容，去除不必要的元素，提取有意义的文本。",
-                backstory="你是清理网页内容的专家，专注于将网页内容结构化为清晰、可读的Markdown格式。",
-                allow_delegation=False,
-                verbose=True,
-                llm=llm
-            )
 
-# 定义翻译 Agent
-def translate_agent():
+
+def process_agent():
     return Agent(
-        role="学术翻译专家",
-        goal="将清理后的学术内容翻译成中文，确保学术严谨性和清晰度。",
-        backstory="你是一名专业翻译，擅长学术文本的翻译，确保技术术语在中文翻译中的准确性。",
+        role="学术内容处理专家",
+        goal="清理网页内容，将其翻译成中文，并总结主要内容，重点包括标题、研究问题、方法、创新点和结论。",
+        backstory="你是一名专业的学术内容处理专家，能够高效地清理、翻译和总结学术论文，确保技术术语的准确性和学术严谨性。",
         allow_delegation=False,
         verbose=True,
         llm=llm
     )
 
-# 定义总结 Agent
-def summarize_agent():
-    return Agent(
-        role="研究总结专家",
-        goal="总结翻译后的内容，重点包括标题、研究问题、方法、创新点、结论。",
-        backstory="你是一名经验丰富的学术研究人员，能够将复杂的论文进行梳理，总结，方便阅读。",
-        allow_delegation=False,
-        verbose=True,
-        llm=llm,
+def create_process_task(markdown_content):
+    return Task(
+        description=(
+            f"请清理以下网页内容，将其转换为学术论文的格式，然后将清理后的内容翻译成中文，并总结主要内容。"
+            f"请确保输出的格式中，论文标题使用一级标题（#），其他部分（研究问题、方法、创新点和结论）使用二级标题（##）。"
+            f"\n\n内容如下：\n\n{markdown_content}"
+        ),
+        agent=process_agent(),
+        expected_output=(
+            "输出翻译后的论文内容（中文），格式如下：\n\n"
+            "# 标题\n"
+            "## 研究问题\n"
+            "## 方法\n"
+            "## 创新点\n"
+            "## 结论\n\n"
+            "请以 Markdown 格式呈现，不要输出任何无关内容。"
+        )
     )
 
-def create_clean_content_task(markdown_content):
-    return Task(
-        description=f"清理并结构化以下网页内容，将其转换为学术论文的格式：\n\n{markdown_content}",
-        agent=clean_content_agent(),
-        expected_output="输出论文内容，包含：标题、研究问题、方法、创新点、结论。用Markdown格式输出,不要输出任何无关内容。"
-    )
-
-def create_translate_task():
-    return Task(
-        description="将清理后的网页内容翻译成中文，保持Markdown的结构和学术术语的准确性。",
-        agent=translate_agent(),
-        expected_output="翻译后的学术内容（中文），以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
-    )
-
-def create_summarize_task():
-    return Task(
-        description="总结翻译后的网页内容，总结的格式：\n\n# 标题\n## 研究问题\n## 提出方法\n## 创新点\n\n结论\n\n确保每个部分保持原意。",
-        agent=summarize_agent(),
-        expected_output="总结后的论文内容，以Markdown格式呈现，保留原始结构和标题，去掉任何无关内容。"
-    )
 
 
 def paper_type_agent():
     return Agent(
-        role="文献类型判断专家",
-        goal="判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。",
-        backstory="你是一名文献类型判断专家，专注于判断文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。",
+        role="文献领域分类专家",
+        goal="根据文献的研究内容，判断其属于'大模型/AI Agent'还是'室内定位/惯性导航'领域。",
+        backstory="你是一名文献领域分类专家，擅长通过分析文献的研究问题、方法和结论，准确判断其所属的学术领域。",
         allow_delegation=False,
         verbose=True,
         llm=llm,
@@ -135,21 +113,19 @@ def paper_type_agent():
 def create_paper_type_task(content):
     return Task(
         description=(
-            f"判断输入的文献内容是关于大模型/AI Agent 相关的论文，还是室内定位/惯性导航相关的论文。"
-            f"你可以通过查找文献中的关键字来帮助判断，例如："
-            f"如果文献中包含'定位','室内定位'、'惯性导航'、'惯性传感器'、'GPS','蓝牙','WIFI','lidar','uwb','led','indoor positioning','激光雷达'、'超宽带'、''惯性测量单元'等字样，则可能属于'室内定位/惯性导航'类型；"
-            f"如果文献中包含'大模型'、'AI Agent','large language model','大语言模型','生成式模型','generation model','代理'等字样，则可能属于'大模型/AI Agent'类型。"
-            f"论文内容如下：\n\n{content}"
+            f"请阅读以下论文内容，分析其研究问题、方法和结论，判断该论文属于'大模型/AI Agent'领域还是'室内定位/惯性导航'领域。"
+            f"请基于论文的核心研究内容和技术领域进行判断，而不是仅仅依赖于关键词。"
+            f"如果该论文的主要研究内容涉及自然语言处理、生成式模型、人工智能代理、大规模语言模型、检索增强生成（RAG）等，则属于'大模型/AI Agent'领域；"
+            f"如果主要涉及室内定位技术、惯性导航系统、传感器融合、定位算法、惯性测量等，则属于'室内定位/惯性导航'领域。"
+            f"如果不属于上述两个领域，请返回'忽略'。"
+            f"\n\n论文内容如下：\n\n{content}"
         ),
         agent=paper_type_agent(),
         expected_output=(
-            "输出文献类型：'大模型/AI Agent' 或 '室内定位/惯性导航'，"
-            "如果不属于这两种类型，返回 '忽略'，不能输出任何其他内容。"
-            "请根据文献中的关键字进行判断。"
+            "请只输出文献类型：'大模型/AI Agent' 或 '室内定位/惯性导航'；"
+            "如果不属于这两种类型，返回 '忽略'。不要输出任何其他内容。"
         )
     )
-
-
 
 
 
@@ -338,15 +314,11 @@ def process_paper(url):
         
         # 添加类型判断
         crew = Crew(
-            agents=[ clean_content_agent(), translate_agent(), summarize_agent()],
-            tasks=[
-                create_clean_content_task(markdown_content['markdown']),
-                create_translate_task(),
-                create_summarize_task()
-            ],
-            share_crew=False,
-            verbose=True
-        )
+                agents=[process_agent()],
+                tasks=[create_process_task(markdown_content['markdown'])],
+                share_crew=False,
+                verbose=True
+            )
 
         result = crew.kickoff().raw
         
