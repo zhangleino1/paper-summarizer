@@ -94,7 +94,7 @@ def create_process_task(markdown_content):
             "## 方法\n"
             "## 创新点\n"
             "## 结论\n\n"
-            "请以 Markdown 格式呈现，不要输出任何无关内容。"
+            "请以 Markdown 格式呈现，不要输出任何无关内容，参考文献也不需要输出。"
         )
     )
 
