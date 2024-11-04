@@ -17,9 +17,10 @@ import re
 from urllib.parse import urlparse, parse_qs, unquote
 from crewai import Agent, Task, Crew,LLM
 from crewai.telemetry import Telemetry
-
+import signal
 import faulthandler
-
+import sys
+os.environ["OTEL_SDK_DISABLED"] = "true"
 faulthandler.enable()
 import threading
 def print_tracebacks():
@@ -38,12 +39,35 @@ for attr in dir(Telemetry):
     if callable(getattr(Telemetry, attr)) and not attr.startswith("__"):
         setattr(Telemetry, attr, noop)
 
+
+def cleanup_processes():
+    # Get all active threads
+    for thread in threading.enumerate():
+        if thread != threading.current_thread():
+            try:
+                thread.join(timeout=1.0)  # Give threads 1 second to cleanup
+            except:
+                pass
+                
+    # Force cleanup any remaining OpenTelemetry exporters
+    from opentelemetry.sdk.trace import get_tracer_provider
+    if get_tracer_provider():
+        get_tracer_provider().shutdown()
+
+# Register cleanup on program exit
+def signal_handler(signum, frame):
+    cleanup_processes()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
 Model = "ollama/qwen2.5:14b"
 # 设置 Ollama API 环境变量
 # os.environ["OLLAMA_API_KEY"] = "your_ollama_api_key"
 os.environ["OPENAI_API_KEY"] = "your_openai_api_key"
 llm = LLM(model=Model, base_url="http://localhost:11434",api_key="your_openai_api_key")
-os.environ["OTEL_SDK_DISABLED"] = "True"
+
 os.environ['CREWAI_TELEMETRY_OPT_OUT'] = 'FALSE'
 # Load environment variables
 load_dotenv()
@@ -62,7 +86,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 11  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 3  # Set this to the number of recent days you want to filter emails by
 
 
 
