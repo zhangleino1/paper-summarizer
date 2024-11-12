@@ -86,7 +86,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 3  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 4  # Set this to the number of recent days you want to filter emails by
 
 
 
@@ -278,7 +278,8 @@ def firecrawl_submit_crawl(url):
                 },
                 "maxDepth": 0,
                 "limit": 1,
-            }
+            },
+            timeout=15
         )
         response.raise_for_status()
         data = response.json()
