@@ -49,10 +49,7 @@ def cleanup_processes():
             except:
                 pass
                 
-    # Force cleanup any remaining OpenTelemetry exporters
-    from opentelemetry.sdk.trace import get_tracer_provider
-    if get_tracer_provider():
-        get_tracer_provider().shutdown()
+
 
 # Register cleanup on program exit
 def signal_handler(signum, frame):
@@ -86,7 +83,7 @@ FIRECRAWL_API_URL = 'http://140.143.139.183:3002/v1'
 
 # Define the email criteria
 SENDER_EMAIL = 'scholaralerts-noreply@google.com'
-DAYS_RECENT = 4  # Set this to the number of recent days you want to filter emails by
+DAYS_RECENT = 3  # Set this to the number of recent days you want to filter emails by
 
 
 
