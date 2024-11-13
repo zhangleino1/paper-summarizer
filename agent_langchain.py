@@ -60,7 +60,7 @@ def create_process_chain():
 你是一名专业的学术内容处理专家，能够高效地清理、翻译和总结学术论文，确保技术术语的准确性和学术严谨性。
 
 请清理以下网页内容，将其转换为学术论文的格式，然后将清理后的内容翻译成中文，并总结主要内容。
-请确保输出的格式中，论文标题使用一级标题（#），其他部分（研究问题、方法、创新点和结论）使用二级标题（##）。
+请确保输出的格式中，论文标题使用一级标题（#），其他部分（关键词、研究问题、方法、创新点和结论）使用二级标题（##）。
 
 内容如下：
 
@@ -69,13 +69,15 @@ def create_process_chain():
 输出翻译后的论文内容（中文），格式如下：
 
 # 标题
+## 关键词
 ## 研究问题
 ## 方法
 ## 创新点
 ## 结论
 
 请以 Markdown 格式呈现，不要输出任何无关内容，参考文献也不需要输出。
-标题、研究问题、方法、创新点和结论都必须输出中文。
+标题、关键词、研究问题、方法、创新点和结论都必须输出中文。
+输出的内容要换行，不能和标题在同一行。
 """
     prompt = ChatPromptTemplate.from_template(template)
     chain = prompt | llm
@@ -258,7 +260,7 @@ def firecrawl_crawl(url):
         result = firecrawl_check_crawl(job_id)
         logging.info(f"Crawl job result: {result}") 
         print(f"Crawl job result: {result}") 
-        if result and result['status'] == 'completed':
+        if result and result['status'] == 'completed' and len(result['data']) > 0:
             return {"markdown": result['data'][0]['markdown'], "metadata": result['data'][0]['metadata']}
         elif result and result['status'] == 'failed':
             logging.error(f"Crawl job failed for URL: {url}")
