@@ -93,7 +93,7 @@ os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
 def process_agent():
     return Agent(
         role="学术内容处理专家",
-        goal="清理网页内容，将其翻译成中文，并总结主要内容，重点包括标题、研究问题、方法、创新点和结论。",
+        goal="清理网页内容，将其翻译成中文，并总结主要内容，重点包括标题、关键词、研究问题、方法、创新点和结论。",
         backstory="你是一名专业的学术内容处理专家，能够高效地清理、翻译和总结学术论文，确保技术术语的准确性和学术严谨性。",
         allow_delegation=False,
         verbose=True,
@@ -104,13 +104,14 @@ def create_process_task(markdown_content):
     return Task(
         description=(
             f"请清理以下网页内容，将其转换为学术论文的格式，然后将清理后的内容翻译成中文，并总结主要内容。"
-            f"请确保输出的格式中，论文标题使用一级标题（#），其他部分（研究问题、方法、创新点和结论）使用二级标题（##）。"
+            f"请确保输出的格式中，论文标题使用一级标题（#），其他部分（研究问题、关键词、方法、创新点和结论）使用二级标题（##）。"
             f"\n\n内容如下：\n\n{markdown_content}"
         ),
         agent=process_agent(),
         expected_output=(
             "输出翻译后的论文内容（中文），格式如下：\n\n"
             "# 标题\n"
+            "## 关键词\n"
             "## 研究问题\n"
             "## 方法\n"
             "## 创新点\n"
@@ -376,6 +377,14 @@ def process_paper(url):
         return output_file, formatted_output
     return None
 
+def process_size(str):
+    now = datetime.now()
+    now_str = now.strftime("%Y%m%d")
+    with open(f"{now_str}_size.txt", 'w', encoding='utf-8') as f:
+        f.write(f"{str}\n")
+
+
+
 def main():
     mail, email_ids = get_emails()
     if not mail or len(email_ids) == 0:
@@ -415,6 +424,7 @@ def main():
             logging.info(f"URL: {url} has been processed before.")
             count += 1
             print(f'-----------all size: {len(all_paper_urls)} ;current size: {count}------------------')
+            process_size(f'all size: {len(all_paper_urls)} ;current size: {count}')
             continue
         result = process_paper(url)
         if result:
@@ -434,6 +444,7 @@ def main():
         count += 1
         # print all and current count
         print(f'-----------all size: {len(all_paper_urls)} ;current size: {count}------------------')
+        process_size(f'all size: {len(all_paper_urls)} ;current size: {count}')
 
     logging.info("All papers processed.")
             
