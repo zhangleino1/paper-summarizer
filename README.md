@@ -3,7 +3,9 @@
 ![ai agent工作流程](/workfloow.png "Magic Gardens")
 
 这张图展示了一个自动化处理学术论文的工作流程，具体步骤如下：
-
+```
+agent_crewai.py 程序入口
+```
 ### 1. **论文阅读痛点**：
    在阅读学术论文时，用户遇到了以下几个常见问题：
    - 网络不稳定，导致无法方便地查看论文内容。
@@ -37,6 +39,6 @@
 - **Firecrawl**：这是一个用于网页抓取和数据处理的框架，负责抓取论文内容，并将其转化为 LLM（大语言模型）可读的数据格式。  url:https://github.com/mendableai/firecrawl
   如果你觉得调用firecrawl收费，我这里有打好的镜像，可以直接下载安装 链接：https://pan.quark.cn/s/1fb1db26633d
 - **CrewAI**：这是一个多智能体协作框架，智能体能够扮演不同角色协同工作，共同完成复杂任务，如抓取、翻译和提取论文内容等。url:https://www.crewai.com/
-- **CrewAI**： ollama 方便集成各种大模型 https://ollama.com/
+- **ollama**：  方便集成各种大模型 https://ollama.com/
 
 这个工作流程实现了从接收论文推送邮件到输出最终可阅读和使用的论文摘要的自动化处理，大大提高了学术论文的阅读和总结效率，特别适合研究人员和学术从业者使用。
