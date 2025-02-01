@@ -35,6 +35,7 @@
 
 ### 总体技术框架：
 - **Firecrawl**：这是一个用于网页抓取和数据处理的框架，负责抓取论文内容，并将其转化为 LLM（大语言模型）可读的数据格式。  url:https://github.com/mendableai/firecrawl
+  如果你觉得调用firecrawl收费，我这里有打好的镜像，可以直接下载安装 链接：https://pan.quark.cn/s/1fb1db26633d
 - **CrewAI**：这是一个多智能体协作框架，智能体能够扮演不同角色协同工作，共同完成复杂任务，如抓取、翻译和提取论文内容等。url:https://www.crewai.com/
 - **CrewAI**： ollama 方便集成各种大模型 https://ollama.com/
 
