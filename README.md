@@ -2,6 +2,8 @@
 
 ![ai agent工作流程](/workfloow.png "Magic Gardens")
 
+详细的教程： [我开源了：学术论文总结AI-Agent！]((https://mp.weixin.qq.com/s/ij_nsm56bdjUV3KkEtoY4g?token=1854334933&lang=zh_CN))
+
 这张图展示了一个自动化处理学术论文的工作流程，具体步骤如下：
 ```
 agent_crewai.py 程序入口
