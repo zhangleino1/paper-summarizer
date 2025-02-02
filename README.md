@@ -25,10 +25,6 @@ agent_crewai.py 程序入口
 ### 3. **Firecrawl平台处理论文链接**：
    - **接收论文链接到 Firecrawl 平台**：Firecrawl 平台是一个爬虫服务，它可以根据输入的 URL 抓取整个网站的内容，并将其转换为干净的 Markdown 或结构化数据。
    - **抓取论文内容**：系统会抓取论文的标题、摘要以及其他有价值的信息，为后续处理提供基础数据。
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=zhangleino1/paper-summarizer&type=Date)](https://star-history.com/#zhangleino1/paper-summarizer&Date)
-
 ### 4. **Multi-Agent Crews 论文智能处理框架**：
    该部分展示了多智能体系统如何协同工作来处理论文数据：
    
@@ -47,3 +43,6 @@ agent_crewai.py 程序入口
 - **ollama**：  方便集成各种大模型 https://ollama.com/
 
 这个工作流程实现了从接收论文推送邮件到输出最终可阅读和使用的论文摘要的自动化处理，大大提高了学术论文的阅读和总结效率，特别适合研究人员和学术从业者使用。
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zhangleino1/paper-summarizer&type=Date)](https://star-history.com/#zhangleino1/paper-summarizer&Date)
