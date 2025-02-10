@@ -79,7 +79,7 @@ PASSWORD = os.getenv('QQ_PASSWORD')
 
 # Firecrawl API settings
 FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
-# https://colab.research.google.com/drive/1GoJxK4ynMnRxSrL1p5hPZH4gqhftmyI2?usp=drive_link 通过google colab获取ngrok地址
+# https://colab.research.google.com/drive/1GoJxK4ynMnRxSrL1p5hPZH4gqhftmyI2?usp=drive_link firecrawl 部署 google colab，获取ngrok地址，
 # 当然你也可以把firecrawl部署到自己的服务器上或本地
 FIRECRAWL_API_URL = 'https://2496-34-86-248-235.ngrok-free.app/v1'
 
