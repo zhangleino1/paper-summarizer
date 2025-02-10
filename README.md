@@ -17,6 +17,7 @@
 pip install requests beautifulsoup4 python-dotenv backoff crewai
 
 agent_crewai.py 程序入口
+# 注意设置 QQ_EMAIL 和 QQ_PASSWORD 的环节变量，我这里是把谷歌学术订阅转发到qq邮箱了
 ```
 ### 1. **论文阅读痛点**：
    在阅读学术论文时，用户遇到了以下几个常见问题：
