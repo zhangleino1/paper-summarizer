@@ -3,9 +3,9 @@
 详细的教程： 
 - [我开源了：学术论文总结AI-Agent！](https://mp.weixin.qq.com/s/ij_nsm56bdjUV3KkEtoY4g?token=1854334933&lang=zh_CN)
 
-- [Firecrawl本地安装](https://mp.weixin.qq.com/s/Zzs4XtCj_xsnlmM0PtOxNg?token=1854334933&lang=zh_CN)
-- [运行效果视频](https://www.bilibili.com/video/BV1CiUSYGEYP/)
-- [google colab 运行不用本地安装](https://colab.research.google.com/drive/1GoJxK4ynMnRxSrL1p5hPZH4gqhftmyI2?usp=drive_link)
+- [Firecrawl本地docker安装,方便国内用户的，因为下载镜像太难了](https://mp.weixin.qq.com/s/Zzs4XtCj_xsnlmM0PtOxNg?token=1854334933&lang=zh_CN)
+- [运行效果视频，方便理解](https://www.bilibili.com/video/BV1CiUSYGEYP/)
+- [google colab 运行，不用本地安装](https://colab.research.google.com/drive/1GoJxK4ynMnRxSrL1p5hPZH4gqhftmyI2?usp=drive_link)
   
 这张图展示了一个自动化处理学术论文的工作流程
 ![ai agent工作流程](/workfloow.png "Magic Gardens")
