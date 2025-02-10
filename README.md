@@ -12,6 +12,9 @@
 
 具体介绍如下：
 ```
+# 安装依赖
+pip install requests beautifulsoup4 python-dotenv backoff crewai
+
 agent_crewai.py 程序入口
 ```
 ### 1. **论文阅读痛点**：
